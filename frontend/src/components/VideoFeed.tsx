@@ -1,4 +1,4 @@
-import VideoCard from './VideoCard';
+import VideoCard from './videocard';
 
 // dados de teste, usando os arquivos que você colocou em public/videos/
 const sampleVideos = [

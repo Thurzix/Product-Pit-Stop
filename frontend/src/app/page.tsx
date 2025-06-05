@@ -1,5 +1,5 @@
-import Header from '../components/Header';
-import VideoFeed from '../components/VideoFeed';
+import Header from '../components/header';
+import VideoFeed from '../components/videofeed';
 
 export default function Home() {
   return (
