@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { MessageCircle, Search, Send, ArrowLeft } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../contexts/AuthContext';
-import { mockUsers } from '../data/mockData';
+import { apiClient, type ConversationResponse, type MessageResponse } from '../services/api';
 import { Message } from '../types';
 
 interface MessagesPageProps {

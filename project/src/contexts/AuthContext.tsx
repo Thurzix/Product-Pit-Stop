@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { User, Message, Comment, CartItem } from '../types';
+import { User, Message, Comment, CartItem, Order } from '../types';
 import { mockUsers } from '../data/mockData';
+import { apiClient, type CartItemResponse } from '../services/api';
 
 interface AuthContextType {
   user: User | null;
@@ -245,49 +246,96 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.setItem('pps_comments', JSON.stringify(updatedComments));
   };
 
-  const addToCart = (productId: string, quantity: number = 1) => {
-    const existingItem = cart.find(item => item.product_id === productId);
-    let updatedCart;
-    
-    if (existingItem) {
-      updatedCart = cart.map(item =>
-        item.product_id === productId
-          ? { ...item, quantity: item.quantity + quantity }
-          : item
-      );
-    } else {
-      const newItem: CartItem = {
-        product_id: productId,
-        quantity,
-        added_at: new Date().toISOString(),
-      };
-      updatedCart = [...cart, newItem];
+  const addToCart = async (productId: string, quantity: number = 1) => {
+    if (!user) {
+      alert('Você precisa estar logado para adicionar itens ao carrinho');
+      return;
     }
-    
-    setCart(updatedCart);
-    localStorage.setItem('pps_cart', JSON.stringify(updatedCart));
+
+    try {
+      const response = await apiClient.addToCart({
+        product_id: productId,
+        quantity
+      });
+
+      if (response.success) {
+        // Reload cart from server to get updated data
+        await loadCartFromServer();
+        console.log('Item adicionado ao carrinho com sucesso!');
+      } else {
+        alert('Erro ao adicionar item ao carrinho: ' + (response.error || response.message));
+      }
+    } catch (error) {
+      console.error('Erro ao adicionar ao carrinho:', error);
+      alert('Erro ao conectar com o servidor');
+    }
   };
 
-  const removeFromCart = (productId: string) => {
-    const updatedCart = cart.filter(item => item.product_id !== productId);
-    setCart(updatedCart);
-    localStorage.setItem('pps_cart', JSON.stringify(updatedCart));
+  const loadCartFromServer = async () => {
+    if (!user) return;
+
+    try {
+      const response = await apiClient.getCart();
+      if (response.success && response.data) {
+        // Convert CartItemResponse to CartItem
+        const cartItems: CartItem[] = response.data.items.map((item: CartItemResponse) => ({
+          product_id: item.product_id,
+          quantity: item.quantity,
+          added_at: item.added_at
+        }));
+        
+        setCart(cartItems);
+        localStorage.setItem('pps_cart', JSON.stringify(cartItems));
+      }
+    } catch (error) {
+      console.error('Erro ao carregar carrinho:', error);
+    }
   };
 
-  const updateCartQuantity = (productId: string, quantity: number) => {
+  const removeFromCart = async (productId: string) => {
+    if (!user) return;
+
+    try {
+      // Find cart item by product_id 
+      const cartItem = cart.find(item => item.product_id === productId);
+      if (!cartItem) return;
+
+      // We need the cart item ID from server, for now use local removal
+      // In a real scenario, we'd need to store the cart item ID
+      const updatedCart = cart.filter(item => item.product_id !== productId);
+      setCart(updatedCart);
+      localStorage.setItem('pps_cart', JSON.stringify(updatedCart));
+    } catch (error) {
+      console.error('Erro ao remover do carrinho:', error);
+    }
+  };
+
+  const updateCartQuantity = async (productId: string, quantity: number) => {
     if (quantity <= 0) {
       removeFromCart(productId);
       return;
     }
-    
-    const updatedCart = cart.map(item =>
-      item.product_id === productId
-        ? { ...item, quantity }
-        : item
-    );
-    setCart(updatedCart);
-    localStorage.setItem('pps_cart', JSON.stringify(updatedCart));
+
+    try {
+      // For now, update locally. In future, we'd call API to update cart item
+      const updatedCart = cart.map(item =>
+        item.product_id === productId
+          ? { ...item, quantity }
+          : item
+      );
+      setCart(updatedCart);
+      localStorage.setItem('pps_cart', JSON.stringify(updatedCart));
+    } catch (error) {
+      console.error('Erro ao atualizar carrinho:', error);
+    }
   };
+
+  // Load cart when user logs in
+  useEffect(() => {
+    if (user) {
+      loadCartFromServer();
+    }
+  }, [user]);
 
   const toggleWishlist = (productId: string) => {
     if (!user) return;

@@ -22,7 +22,7 @@ function App() {
   const [showCheckout, setShowCheckout] = useState(false);
   const [selectedSeller, setSelectedSeller] = useState<User | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-  const { user } = useAuth();
+  const { user, addToCart } = useAuth();
 
   // Listen for profile click from header
   React.useEffect(() => {
@@ -66,8 +66,14 @@ function App() {
   }, [user]);
 
   const handleBuyNow = (product: Product) => {
-    setSelectedProduct(product);
-    setShowBuyModal(true);
+    // Use o carrinho real do contexto de auth
+    addToCart(product.id);
+    
+    // Opcional: mostrar uma notificação de sucesso
+    alert('Produto adicionado ao carrinho!');
+    
+    // Navegar para a página do carrinho
+    setActiveTab('cart');
   };
 
   const handleCheckout = () => {

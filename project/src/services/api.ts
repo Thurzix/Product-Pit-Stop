@@ -18,6 +18,16 @@ export const API_ENDPOINTS = {
   // Upload endpoints
   UPLOAD_VIDEO: '/api/upload/video',
   UPLOAD_IMAGE: '/api/upload/image',
+  
+  // Cart endpoints
+  CART: '/api/cart',
+  CART_ITEM: (id: string) => `/api/cart/${id}`,
+  
+  // Message endpoints
+  MESSAGES: '/api/messages',
+  MESSAGE_THREAD: (contactId: string) => `/api/messages/${contactId}`,
+  MESSAGE_READ: (id: string) => `/api/messages/${id}/read`,
+  UNREAD_COUNT: '/api/messages/unread/count',
 };
 
 // API response types
@@ -230,7 +240,122 @@ class ApiClient {
     const endpoint = `${API_ENDPOINTS.PRODUCTS_SEARCH(searchTerm)}${searchParams.toString() ? `?${searchParams}` : ''}`;
     return this.request<{ products: ProductResponse[] }>(endpoint);
   }
+
+  // Cart methods
+  async getCart(): Promise<ApiResponse<{ 
+    items: CartItemResponse[]; 
+    total: number; 
+    count: number; 
+  }>> {
+    return this.request<{ 
+      items: CartItemResponse[]; 
+      total: number; 
+      count: number; 
+    }>(API_ENDPOINTS.CART);
+  }
+
+  async addToCart(productData: {
+    product_id: string;
+    quantity?: number;
+  }): Promise<ApiResponse<{}>> {
+    return this.request<{}>(API_ENDPOINTS.CART, {
+      method: 'POST',
+      body: JSON.stringify(productData),
+    });
+  }
+
+  async updateCartItem(
+    id: string,
+    data: { quantity: number }
+  ): Promise<ApiResponse<{}>> {
+    return this.request<{}>(API_ENDPOINTS.CART_ITEM(id), {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async removeCartItem(id: string): Promise<ApiResponse<{}>> {
+    return this.request<{}>(API_ENDPOINTS.CART_ITEM(id), {
+      method: 'DELETE',
+    });
+  }
+
+  async clearCart(): Promise<ApiResponse<{}>> {
+    return this.request<{}>(API_ENDPOINTS.CART, {
+      method: 'DELETE',
+    });
+  }
+
+  // Message methods
+  async getConversations(): Promise<ApiResponse<{ conversations: ConversationResponse[] }>> {
+    return this.request<{ conversations: ConversationResponse[] }>(API_ENDPOINTS.MESSAGES);
+  }
+
+  async getMessages(contactId: string): Promise<ApiResponse<{ messages: MessageResponse[] }>> {
+    return this.request<{ messages: MessageResponse[] }>(API_ENDPOINTS.MESSAGE_THREAD(contactId));
+  }
+
+  async sendMessage(messageData: {
+    recipient_id: string;
+    content: string;
+    product_id?: string;
+  }): Promise<ApiResponse<{ message: MessageResponse }>> {
+    return this.request<{ message: MessageResponse }>(API_ENDPOINTS.MESSAGES, {
+      method: 'POST',
+      body: JSON.stringify(messageData),
+    });
+  }
+
+  async markMessageAsRead(messageId: string): Promise<ApiResponse<{}>> {
+    return this.request<{}>(API_ENDPOINTS.MESSAGE_READ(messageId), {
+      method: 'PUT',
+    });
+  }
+
+  async getUnreadCount(): Promise<ApiResponse<{ unread_count: number }>> {
+    return this.request<{ unread_count: number }>(API_ENDPOINTS.UNREAD_COUNT);
+  }
 }
+
+// Cart item response type
+export interface CartItemResponse {
+  id: string;
+  product_id: string;
+  quantity: number;
+  added_at: string;
+  title: string;
+  description: string;
+  price: number;
+  thumbnail: string;
+  stock: number;
+  seller_name: string;
+  store_name: string;
+}
+
+// Message types
+export interface MessageResponse {
+  id: string;
+  sender_id: string;
+  recipient_id: string;
+  product_id?: string;
+  content: string;
+  is_read: boolean;
+  created_at: string;
+  sender_name: string;
+  sender_image?: string;
+}
+
+export interface ConversationResponse {
+  contact_id: string;
+  contact_name: string;
+  contact_image?: string;
+  contact_store?: string;
+  last_message_time: string;
+  last_message_content: string;
+  unread_count: number;
+}
+
+
 
 // Create and export API client instance
 export const apiClient = new ApiClient(API_BASE_URL);
