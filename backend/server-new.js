@@ -13,6 +13,7 @@ require('./config/database');
 // Importar rotas
 const authRoutes = require('./routes/authRoutes');
 const productRoutes = require('./routes/productRoutes');
+const uploadRoutes = require('./routes/uploadRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -48,6 +49,7 @@ if (process.env.NODE_ENV === 'development') {
 // Rotas da API
 app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
+app.use('/api/upload', uploadRoutes);
 
 // Rota de health check
 app.get('/health', (req, res) => {

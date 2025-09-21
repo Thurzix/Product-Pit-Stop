@@ -100,17 +100,48 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const login = async (email: string, password: string): Promise<boolean> => {
     setIsLoading(true);
     
-    // Simular autenticação
-    const foundUser = mockUsers.find(u => u.email === email);
-    if (foundUser) {
-      setUser(foundUser);
-      localStorage.setItem('pps_user', JSON.stringify(foundUser));
+    try {
+      // Fazer chamada para o backend
+      const response = await fetch('http://localhost:3001/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        const userData = {
+          id: data.data.user.id,
+          name: data.data.user.name,
+          email: data.data.user.email,
+          role: data.data.user.role,
+          profile_image: data.data.user.profile_image,
+          bio: data.data.user.bio,
+          store_name: data.data.user.store_name,
+          store_description: data.data.user.store_description,
+          wishlist: [],
+          orders: [],
+          preferences: []
+        };
+
+        setUser(userData);
+        localStorage.setItem('pps_user', JSON.stringify(userData));
+        localStorage.setItem('pps_token', data.data.token);
+        setIsLoading(false);
+        return true;
+      } else {
+        console.error('Login failed:', data.message);
+        setIsLoading(false);
+        return false;
+      }
+    } catch (error) {
+      console.error('Login error:', error);
       setIsLoading(false);
-      return true;
+      return false;
     }
-    
-    setIsLoading(false);
-    return false;
   };
 
   const logout = () => {
@@ -121,6 +152,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setProductLikes({});
     setProductComments({});
     localStorage.removeItem('pps_user');
+    localStorage.removeItem('pps_token');
     localStorage.removeItem('pps_messages');
     localStorage.removeItem('pps_comments');
     localStorage.removeItem('pps_cart');
@@ -131,22 +163,53 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signup = async (userData: Partial<User>): Promise<boolean> => {
     setIsLoading(true);
     
-    // Simular criação de conta
-    const newUser: User = {
-      id: `u${Date.now()}`,
-      role: 'buyer',
-      name: userData.name || '',
-      email: userData.email || '',
-      wishlist: [],
-      orders: [],
-      preferences: userData.preferences || [],
-      ...userData
-    };
-    
-    setUser(newUser);
-    localStorage.setItem('pps_user', JSON.stringify(newUser));
-    setIsLoading(false);
-    return true;
+    try {
+      // Fazer chamada para o backend
+      const response = await fetch('http://localhost:3001/api/auth/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: userData.name,
+          email: userData.email,
+          password: userData.password || '',
+          role: userData.role || 'buyer'
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        const newUser = {
+          id: data.data.user.id,
+          name: data.data.user.name,
+          email: data.data.user.email,
+          role: data.data.user.role,
+          profile_image: data.data.user.profile_image,
+          bio: data.data.user.bio,
+          store_name: data.data.user.store_name,
+          store_description: data.data.user.store_description,
+          wishlist: [],
+          orders: [],
+          preferences: userData.preferences || []
+        };
+
+        setUser(newUser);
+        localStorage.setItem('pps_user', JSON.stringify(newUser));
+        localStorage.setItem('pps_token', data.data.token);
+        setIsLoading(false);
+        return true;
+      } else {
+        console.error('Signup failed:', data.message || data.errors);
+        setIsLoading(false);
+        return false;
+      }
+    } catch (error) {
+      console.error('Signup error:', error);
+      setIsLoading(false);
+      return false;
+    }
   };
 
   const updateUser = (userData: Partial<User>) => {

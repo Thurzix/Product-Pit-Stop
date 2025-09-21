@@ -3,6 +3,7 @@ export interface User {
   role: 'buyer' | 'seller';
   name: string;
   email: string;
+  password?: string; // Optional, used only for registration
   profile_image?: string;
   bio?: string;
   phone?: string;
@@ -41,16 +42,6 @@ export interface CartItem {
   product_id: string;
   quantity: number;
   added_at: string;
-}
-
-export interface Order {
-  order_id: string;
-  product_id: string;
-  quantity: number;
-  price_paid: number;
-  purchased_at: string;
-  status: 'pendente' | 'processando' | 'enviado' | 'entregue' | 'cancelado';
-  product?: Product;
 }
 
 export interface Order {
