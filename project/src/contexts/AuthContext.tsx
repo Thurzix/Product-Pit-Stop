@@ -257,50 +257,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.setItem('pps_comments', JSON.stringify(updatedComments));
   };
 
-  const addToCart = async (productId: string, quantity: number = 1) => {
-    if (!user) {
-      alert('Você precisa estar logado para adicionar itens ao carrinho');
-      return;
-    }
-
-    try {
-      const response = await apiClient.addToCart({
-        product_id: productId,
-        quantity
-      });
-
-      if (response.success) {
-        // Reload cart from server to get updated data
-        await loadCartFromServer();
-        console.log('Item adicionado ao carrinho com sucesso!');
-      } else {
-        alert('Erro ao adicionar item ao carrinho: ' + (response.error || response.message));
-      }
-    } catch (error) {
-      console.error('Erro ao adicionar ao carrinho:', error);
-      alert('Erro ao conectar com o servidor');
-    }
+  const addToCart = async (_productId: string, _quantity: number = 1) => {
+    // Função mantida para compatibilidade mas não faz nada
+    // O carrinho agora usa localStorage via cartService
+    console.log('addToCart (deprecated) - use cartService instead');
   };
 
   const loadCartFromServer = async () => {
-    if (!user) return;
-
-    try {
-      const response = await apiClient.getCart();
-      if (response.success && response.data) {
-        // Convert CartItemResponse to CartItem
-        const cartItems: CartItem[] = response.data.items.map((item: CartItemResponse) => ({
-          product_id: item.product_id,
-          quantity: item.quantity,
-          added_at: item.added_at
-        }));
-        
-        setCart(cartItems);
-        localStorage.setItem('pps_cart', JSON.stringify(cartItems));
-      }
-    } catch (error) {
-      console.error('Erro ao carregar carrinho:', error);
-    }
+    // Função mantida para compatibilidade mas não faz nada
+    // O carrinho agora usa localStorage via cartService
   };
 
   const removeFromCart = async (productId: string) => {

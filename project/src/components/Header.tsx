@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { ShoppingBag, User, LogIn, Home, Search, MessageCircle } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { motion } from 'framer-motion';
@@ -14,9 +14,24 @@ interface HeaderProps {
 
 export const Header: React.FC<HeaderProps> = ({ onLoginClick, onCartClick, activeTab, onTabChange }) => {
   const { user, logout } = useAuth();
+  const [cartItemCount, setCartItemCount] = useState(0);
 
-  // Calculate total items in cart from localStorage
-  const cartItemCount = cartService.getCartItemCount();
+  // Atualiza contador do carrinho
+  useEffect(() => {
+    const updateCartCount = () => {
+      setCartItemCount(cartService.getCartItemCount());
+    };
+
+    // Atualiza na montagem
+    updateCartCount();
+
+    // Escuta mudanças no carrinho
+    window.addEventListener('cartUpdated', updateCartCount);
+    
+    return () => {
+      window.removeEventListener('cartUpdated', updateCartCount);
+    };
+  }, []);
 
   const navItems = [
     { id: 'home', icon: Home, label: 'Início' },

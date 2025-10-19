@@ -23,6 +23,8 @@ export const getCart = (): CartItem[] => {
 const saveCart = (cart: CartItem[]): void => {
   try {
     localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cart));
+    // Dispara evento para atualizar UI
+    window.dispatchEvent(new Event('cartUpdated'));
   } catch (error) {
     console.error('Erro ao salvar carrinho:', error);
   }
@@ -73,6 +75,8 @@ export const updateCartItemQuantity = (productId: string, quantity: number): Car
 // Limpar carrinho
 export const clearCart = (): void => {
   localStorage.removeItem(CART_STORAGE_KEY);
+  // Dispara evento para atualizar UI
+  window.dispatchEvent(new Event('cartUpdated'));
 };
 
 // Calcular total do carrinho
