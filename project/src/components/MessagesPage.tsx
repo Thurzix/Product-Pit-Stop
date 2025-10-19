@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../contexts/AuthContext';
 import { apiClient, type ConversationResponse, type MessageResponse } from '../services/api';
 import { Message } from '../types';
+import { mockUsers } from '../data/mockData';
 
 interface MessagesPageProps {
   onBack: () => void;
