@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const db = require('../config/database');
+const supabase = require('../config/supabase');
 const { authenticateToken } = require('../middleware/auth');
 
 // GET /api/cart - Buscar itens do carrinho do usuário
@@ -8,37 +8,54 @@ router.get('/', authenticateToken, async (req, res) => {
   try {
     const userId = req.user.userId;
     
-    const query = `
-      SELECT 
-        ci.id,
-        ci.product_id,
-        ci.quantity,
-        ci.added_at,
-        p.title,
-        p.description,
-        p.price,
-        p.thumbnail,
-        p.stock,
-        u.name as seller_name,
-        u.store_name
-      FROM cart_items ci
-      JOIN products p ON ci.product_id = p.id
-      JOIN users u ON p.seller_id = u.id
-      WHERE ci.user_id = ?
-      ORDER BY ci.added_at DESC
-    `;
+    const { data: cartItems, error } = await supabase
+      .from('cart_items')
+      .select(`
+        id,
+        product_id,
+        quantity,
+        added_at,
+        products:product_id (
+          title,
+          description,
+          price,
+          thumbnail,
+          stock,
+          users:seller_id (
+            name,
+            store_name
+          )
+        )
+      `)
+      .eq('user_id', userId)
+      .order('added_at', { ascending: false });
+
+    if (error) throw error;
+
+    // Formatar dados para corresponder ao formato esperado
+    const formattedItems = cartItems.map(item => ({
+      id: item.id,
+      product_id: item.product_id,
+      quantity: item.quantity,
+      added_at: item.added_at,
+      title: item.products.title,
+      description: item.products.description,
+      price: item.products.price,
+      thumbnail: item.products.thumbnail,
+      stock: item.products.stock,
+      seller_name: item.products.users.name,
+      store_name: item.products.users.store_name
+    }));
     
-    const [cartItems] = await db.execute(query, [userId]);
-    
-    // Calculate total
-    const total = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    // Calcular total
+    const total = formattedItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
     
     res.json({
       success: true,
       data: {
-        items: cartItems,
+        items: formattedItems,
         total: total,
-        count: cartItems.length
+        count: formattedItems.length
       }
     });
   } catch (error) {
@@ -63,20 +80,20 @@ router.post('/', authenticateToken, async (req, res) => {
       });
     }
 
-    // Check if product exists
-    const [products] = await db.execute(
-      'SELECT id, stock FROM products WHERE id = ?',
-      [product_id]
-    );
+    // Verificar se o produto existe
+    const { data: product, error: productError } = await supabase
+      .from('products')
+      .select('id, stock')
+      .eq('id', product_id)
+      .single();
 
-    if (products.length === 0) {
+    if (productError || !product) {
       return res.status(404).json({
         success: false,
         error: 'Produto não encontrado'
       });
     }
 
-    const product = products[0];
     if (product.stock < quantity) {
       return res.status(400).json({
         success: false,
@@ -84,15 +101,17 @@ router.post('/', authenticateToken, async (req, res) => {
       });
     }
 
-    // Check if item already exists in cart
-    const [existingItems] = await db.execute(
-      'SELECT id, quantity FROM cart_items WHERE user_id = ? AND product_id = ?',
-      [userId, product_id]
-    );
+    // Verificar se item já existe no carrinho
+    const { data: existingItem, error: checkError } = await supabase
+      .from('cart_items')
+      .select('id, quantity')
+      .eq('user_id', userId)
+      .eq('product_id', product_id)
+      .single();
 
-    if (existingItems.length > 0) {
-      // Update quantity
-      const newQuantity = existingItems[0].quantity + quantity;
+    if (existingItem) {
+      // Atualizar quantidade
+      const newQuantity = existingItem.quantity + quantity;
       if (newQuantity > product.stock) {
         return res.status(400).json({
           success: false,
@@ -100,16 +119,23 @@ router.post('/', authenticateToken, async (req, res) => {
         });
       }
 
-      await db.execute(
-        'UPDATE cart_items SET quantity = ? WHERE id = ?',
-        [newQuantity, existingItems[0].id]
-      );
+      const { error: updateError } = await supabase
+        .from('cart_items')
+        .update({ quantity: newQuantity })
+        .eq('id', existingItem.id);
+
+      if (updateError) throw updateError;
     } else {
-      // Insert new item
-      await db.execute(
-        'INSERT INTO cart_items (user_id, product_id, quantity) VALUES (?, ?, ?)',
-        [userId, product_id, quantity]
-      );
+      // Inserir novo item
+      const { error: insertError } = await supabase
+        .from('cart_items')
+        .insert([{
+          user_id: userId,
+          product_id: product_id,
+          quantity: quantity
+        }]);
+
+      if (insertError) throw insertError;
     }
 
     res.status(201).json({
@@ -139,33 +165,38 @@ router.put('/:id', authenticateToken, async (req, res) => {
       });
     }
 
-    // Check if cart item belongs to user
-    const [cartItems] = await db.execute(
-      `SELECT ci.*, p.stock FROM cart_items ci 
-       JOIN products p ON ci.product_id = p.id 
-       WHERE ci.id = ? AND ci.user_id = ?`,
-      [cartItemId, userId]
-    );
+    // Verificar se o item pertence ao usuário e pegar o estoque
+    const { data: cartItem, error: cartError } = await supabase
+      .from('cart_items')
+      .select(`
+        id,
+        quantity,
+        products:product_id (stock)
+      `)
+      .eq('id', cartItemId)
+      .eq('user_id', userId)
+      .single();
 
-    if (cartItems.length === 0) {
+    if (cartError || !cartItem) {
       return res.status(404).json({
         success: false,
         error: 'Item do carrinho não encontrado'
       });
     }
 
-    const cartItem = cartItems[0];
-    if (quantity > cartItem.stock) {
+    if (quantity > cartItem.products.stock) {
       return res.status(400).json({
         success: false,
         error: 'Quantidade solicitada excede o estoque disponível'
       });
     }
 
-    await db.execute(
-      'UPDATE cart_items SET quantity = ? WHERE id = ?',
-      [quantity, cartItemId]
-    );
+    const { error: updateError } = await supabase
+      .from('cart_items')
+      .update({ quantity: quantity })
+      .eq('id', cartItemId);
+
+    if (updateError) throw updateError;
 
     res.json({
       success: true,
@@ -186,17 +217,13 @@ router.delete('/:id', authenticateToken, async (req, res) => {
     const userId = req.user.userId;
     const cartItemId = req.params.id;
 
-    const [result] = await db.execute(
-      'DELETE FROM cart_items WHERE id = ? AND user_id = ?',
-      [cartItemId, userId]
-    );
+    const { error } = await supabase
+      .from('cart_items')
+      .delete()
+      .eq('id', cartItemId)
+      .eq('user_id', userId);
 
-    if (result.affectedRows === 0) {
-      return res.status(404).json({
-        success: false,
-        error: 'Item do carrinho não encontrado'
-      });
-    }
+    if (error) throw error;
 
     res.json({
       success: true,
@@ -216,7 +243,12 @@ router.delete('/', authenticateToken, async (req, res) => {
   try {
     const userId = req.user.userId;
 
-    await db.execute('DELETE FROM cart_items WHERE user_id = ?', [userId]);
+    const { error } = await supabase
+      .from('cart_items')
+      .delete()
+      .eq('user_id', userId);
+
+    if (error) throw error;
 
     res.json({
       success: true,

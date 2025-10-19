@@ -7,8 +7,8 @@ const dotenv = require('dotenv');
 // Carregar variáveis de ambiente
 dotenv.config();
 
-// Importar conexão com banco de dados
-require('./config/database');
+// Importar conexão com Supabase
+require('./config/supabase');
 
 // Importar rotas
 const authRoutes = require('./routes/authRoutes');
@@ -30,7 +30,7 @@ const limiter = rateLimit({
 app.use(helmet());
 app.use(cors({
   origin: process.env.NODE_ENV === 'production' 
-    ? ['https://your-frontend-domain.com'] 
+    ? [process.env.FRONTEND_URL || 'https://product-pit-stop.vercel.app'] 
     : ['http://localhost:3000', 'http://localhost:5173'],
   credentials: true
 }));
