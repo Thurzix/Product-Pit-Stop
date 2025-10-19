@@ -30,8 +30,8 @@ export const VideoCard: React.FC<VideoCardProps> = ({
 
   const handleAddToCart = () => {
     cartService.addToCart(product, 1);
-    // Feedback visual (opcional - pode adicionar toast/notificação)
-    alert('Produto adicionado ao carrinho!');
+    // Feedback visual sutil (sem alert intrusivo)
+    // Pode adicionar um toast/notificação aqui depois
   };
 
   const currentLikes = product.likes + (productLikes[product.id] || 0);

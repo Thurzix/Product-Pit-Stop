@@ -68,11 +68,8 @@ function App() {
     // Adiciona ao carrinho usando localStorage
     cartService.addToCart(product, 1);
     
-    // Mostra mensagem de sucesso
-    alert('Produto adicionado ao carrinho!');
-    
-    // Navega para página do carrinho
-    setActiveTab('cart');
+    // Vai direto para checkout (não para carrinho)
+    setShowCheckout(true);
   };
 
   const handleCheckout = () => {

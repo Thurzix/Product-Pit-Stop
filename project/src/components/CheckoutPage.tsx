@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { ArrowLeft, CreditCard, Smartphone, FileText, MapPin, User, Check } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../contexts/AuthContext';
-import { mockProducts } from '../data/mockData';
+import * as cartService from '../services/cartService';
 
 interface CheckoutPageProps {
   onBack: () => void;
@@ -10,20 +10,15 @@ interface CheckoutPageProps {
 }
 
 export const CheckoutPage: React.FC<CheckoutPageProps> = ({ onBack, onOrderComplete }) => {
-  const { cart, user, addOrder } = useAuth();
+  const { user, addOrder } = useAuth();
   const [selectedPayment, setSelectedPayment] = useState('pix');
   const [isProcessing, setIsProcessing] = useState(false);
   const [orderComplete, setOrderComplete] = useState(false);
 
-  const cartItems = cart.map(cartItem => {
-    const product = mockProducts.find(p => p.id === cartItem.product_id);
-    return product ? { ...cartItem, product } : null;
-  }).filter(Boolean);
+  // Pega o carrinho do localStorage
+  const cartItems = cartService.getCart();
 
-  const subtotal = cartItems.reduce((sum, item) => {
-    return sum + (item!.product.price * item!.quantity);
-  }, 0);
-
+  const subtotal = cartService.getCartTotal();
   const shipping = 15.90;
   const total = subtotal + shipping;
 
@@ -48,15 +43,16 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ onBack, onOrderCompl
     
     // Add orders to user profile
     cartItems.forEach(item => {
-      if (item) {
-        addOrder({
-          product_id: item.product.id,
-          quantity: item.quantity,
-          price_paid: item.product.price * item.quantity,
-          status: 'processando'
-        });
-      }
+      addOrder({
+        product_id: item.product.id,
+        quantity: item.quantity,
+        price_paid: item.product.price * item.quantity,
+        status: 'processando'
+      });
     });
+    
+    // Limpar carrinho após finalizar pedido
+    cartService.clearCart();
     
     setIsProcessing(false);
     setOrderComplete(true);
@@ -162,18 +158,18 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ onBack, onOrderCompl
           <h3 className="font-semibold text-gray-800 mb-3">Resumo do Pedido</h3>
           <div className="space-y-3">
             {cartItems.map((item) => (
-              <div key={item!.product.id} className="flex items-center space-x-3 bg-gray-50 rounded-lg p-3">
+              <div key={item.product.id} className="flex items-center space-x-3 bg-gray-50 rounded-lg p-3">
                 <img
-                  src={item!.product.thumbnail}
-                  alt={item!.product.title}
+                  src={item.product.thumbnail}
+                  alt={item.product.title}
                   className="w-12 h-12 rounded-lg object-cover"
                 />
                 <div className="flex-1">
-                  <h4 className="font-medium text-gray-800 text-sm">{item!.product.title}</h4>
-                  <p className="text-gray-600 text-sm">Qtd: {item!.quantity}</p>
+                  <h4 className="font-medium text-gray-800 text-sm">{item.product.title}</h4>
+                  <p className="text-gray-600 text-sm">Qtd: {item.quantity}</p>
                 </div>
                 <p className="font-semibold text-purple-600">
-                  {formatPrice(item!.product.price * item!.quantity)}
+                  {formatPrice(item.product.price * item.quantity)}
                 </p>
               </div>
             ))}

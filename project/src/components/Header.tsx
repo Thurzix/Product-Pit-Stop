@@ -3,6 +3,7 @@ import { ShoppingBag, User, LogIn, Home, Search, MessageCircle } from 'lucide-re
 import { useAuth } from '../contexts/AuthContext';
 import { motion } from 'framer-motion';
 import { mockProducts } from '../data/mockData';
+import * as cartService from '../services/cartService';
 
 interface HeaderProps {
   onLoginClick: () => void;
@@ -12,10 +13,10 @@ interface HeaderProps {
 }
 
 export const Header: React.FC<HeaderProps> = ({ onLoginClick, onCartClick, activeTab, onTabChange }) => {
-  const { user, logout, cart } = useAuth();
+  const { user, logout } = useAuth();
 
-  // Calculate total items in cart
-  const cartItemCount = cart.reduce((total, item) => total + item.quantity, 0);
+  // Calculate total items in cart from localStorage
+  const cartItemCount = cartService.getCartItemCount();
 
   const navItems = [
     { id: 'home', icon: Home, label: 'Início' },
