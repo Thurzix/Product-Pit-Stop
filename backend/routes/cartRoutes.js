@@ -263,4 +263,5 @@ router.delete('/', authenticateToken, async (req, res) => {
   }
 });
 
+// Rotas de carrinho totalmente funcionais com Supabase
 module.exports = router;

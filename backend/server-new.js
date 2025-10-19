@@ -66,7 +66,7 @@ app.use('/api/messages', messageRoutes);
 app.get('/health', (req, res) => {
   res.json({
     success: true,
-    message: 'Product Pit Stop API está funcionando!',
+    message: 'Product Pit Stop API está funcionando! (Cart routes active)',
     timestamp: new Date().toISOString(),
     environment: process.env.NODE_ENV || 'development'
   });
