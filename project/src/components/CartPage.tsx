@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Trash2, Plus, Minus, ShoppingBag, ArrowLeft } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { apiClient, type CartItemResponse } from '../services/api';
-import { Product } from '../types';
+import * as cartService from '../services/cartService';
+import type { CartItem } from '../services/cartService';
 
 interface CartPageProps {
   onBack: () => void;
@@ -11,60 +11,32 @@ interface CartPageProps {
 }
 
 export const CartPage: React.FC<CartPageProps> = ({ onBack, onCheckout }) => {
-  const { cart, updateCartQuantity, removeFromCart, user } = useAuth();
-  const [cartDetails, setCartDetails] = useState<CartItemResponse[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { user } = useAuth();
+  const [cartItems, setCartItems] = useState<CartItem[]>([]);
+  const [loading, setLoading] = useState(false);
 
-  // Load cart details from server
+  // Carregar carrinho do localStorage
   useEffect(() => {
-    const loadCartDetails = async () => {
-      if (!user) {
-        setLoading(false);
-        return;
-      }
+    loadCart();
+  }, []);
 
-      try {
-        const response = await apiClient.getCart();
-        if (response.success && response.data) {
-          setCartDetails(response.data.items);
-        }
-      } catch (error) {
-        console.error('Erro ao carregar carrinho:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadCartDetails();
-  }, [user]);
-
-  // Use cartDetails from server if available, otherwise fall back to local cart
-  const cartItems = cartDetails.length > 0 ? cartDetails : cart.map(cartItem => ({
-    id: cartItem.product_id,
-    product_id: cartItem.product_id,
-    quantity: cartItem.quantity,
-    added_at: cartItem.added_at,
-    title: 'Produto',
-    description: 'Descrição do produto',
-    price: 99.99,
-    thumbnail: '',
-    stock: 10,
-    seller_name: 'Vendedor',
-    store_name: 'Loja'
-  }));
+  const loadCart = () => {
+    const cart = cartService.getCart();
+    setCartItems(cart);
+  };
 
   const updateQuantity = (productId: string, newQuantity: number) => {
-    updateCartQuantity(productId, newQuantity);
+    cartService.updateCartItemQuantity(productId, newQuantity);
+    loadCart(); // Recarrega para atualizar UI
   };
 
   const removeItem = (productId: string) => {
-    removeFromCart(productId);
+    cartService.removeFromCart(productId);
+    loadCart(); // Recarrega para atualizar UI
   };
 
   const getTotalPrice = () => {
-    return cartItems.reduce((total, item) => {
-      return total + (item.price * item.quantity);
-    }, 0);
+    return cartService.getCartTotal();
   };
 
   const formatPrice = (price: number) => {
@@ -142,7 +114,7 @@ export const CartPage: React.FC<CartPageProps> = ({ onBack, onCheckout }) => {
           <div className="lg:col-span-2 space-y-4">
             {cartItems.map((item, index) => (
               <motion.div
-                key={item.product_id}
+                key={item.product.id}
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: index * 0.1 }}
@@ -150,26 +122,26 @@ export const CartPage: React.FC<CartPageProps> = ({ onBack, onCheckout }) => {
               >
                 <div className="flex items-center space-x-4">
                   <img
-                    src={item.thumbnail || 'https://via.placeholder.com/80'}
-                    alt={item.title}
+                    src={item.product.thumbnail || 'https://via.placeholder.com/80'}
+                    alt={item.product.title}
                     className="w-20 h-20 object-cover rounded-lg"
                   />
                   
                   <div className="flex-1">
                     <h3 className="font-semibold text-gray-800 mb-1">
-                      {item.title}
+                      {item.product.title}
                     </h3>
                     <p className="text-sm text-gray-500 mb-2">
-                      Vendido por {item.store_name}
+                      Vendido por {item.product.seller?.store_name || 'Vendedor'}
                     </p>
                     <p className="text-lg font-bold text-purple-600">
-                      {formatPrice(item.price)}
+                      {formatPrice(item.product.price)}
                     </p>
                   </div>
 
                   <div className="flex items-center space-x-3">
                     <button
-                      onClick={() => updateQuantity(item.product_id, item.quantity - 1)}
+                      onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
                       className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors"
                     >
                       <Minus className="w-4 h-4" />
@@ -180,7 +152,7 @@ export const CartPage: React.FC<CartPageProps> = ({ onBack, onCheckout }) => {
                     </span>
                     
                     <button
-                      onClick={() => updateQuantity(item.product_id, item.quantity + 1)}
+                      onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
                       className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors"
                     >
                       <Plus className="w-4 h-4" />
@@ -188,7 +160,7 @@ export const CartPage: React.FC<CartPageProps> = ({ onBack, onCheckout }) => {
                   </div>
 
                   <button
-                    onClick={() => removeItem(item.product_id)}
+                    onClick={() => removeItem(item.product.id)}
                     className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
                   >
                     <Trash2 className="w-5 h-5" />

@@ -13,16 +13,15 @@ import { LoginModal } from './components/LoginModal';
 import { SignupModal } from './components/SignupModal';
 import { Product, User } from './types';
 import { motion, AnimatePresence } from 'framer-motion';
+import * as cartService from './services/cartService';
 
 function App() {
   const [activeTab, setActiveTab] = useState('home');
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showSignupModal, setShowSignupModal] = useState(false);
-  const [showBuyModal, setShowBuyModal] = useState(false);
   const [showCheckout, setShowCheckout] = useState(false);
   const [selectedSeller, setSelectedSeller] = useState<User | null>(null);
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-  const { user, addToCart } = useAuth();
+  const { user } = useAuth();
 
   // Listen for profile click from header
   React.useEffect(() => {
@@ -66,13 +65,13 @@ function App() {
   }, [user]);
 
   const handleBuyNow = (product: Product) => {
-    // Use o carrinho real do contexto de auth
-    addToCart(product.id);
+    // Adiciona ao carrinho usando localStorage
+    cartService.addToCart(product, 1);
     
-    // Opcional: mostrar uma notificação de sucesso
+    // Mostra mensagem de sucesso
     alert('Produto adicionado ao carrinho!');
     
-    // Navegar para a página do carrinho
+    // Navega para página do carrinho
     setActiveTab('cart');
   };
 
@@ -231,64 +230,6 @@ function App() {
         onClose={() => setShowSignupModal(false)}
         onSwitchToLogin={switchToLogin}
       />
-
-      {/* Buy Now Modal */}
-      <AnimatePresence>
-        {showBuyModal && selectedProduct && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black bg-opacity-50 flex items-end justify-center p-4 z-50"
-            onClick={() => setShowBuyModal(false)}
-          >
-            <motion.div
-              initial={{ y: 300 }}
-              animate={{ y: 0 }}
-              exit={{ y: 300 }}
-              className="bg-white rounded-t-2xl p-6 w-full max-w-md"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="w-12 h-1 bg-gray-300 rounded-full mx-auto mb-6"></div>
-              
-              <div className="flex items-center space-x-4 mb-6">
-                <img
-                  src={selectedProduct.thumbnail}
-                  alt={selectedProduct.title}
-                  className="w-16 h-16 rounded-lg object-cover"
-                />
-                <div className="flex-1">
-                  <h3 className="font-semibold text-gray-800">{selectedProduct.title}</h3>
-                  <p className="text-2xl font-bold text-purple-600">
-                    {formatPrice(selectedProduct.price)}
-                  </p>
-                </div>
-              </div>
-
-              <div className="space-y-3">
-                <button 
-                  onClick={() => {
-                    setShowBuyModal(false);
-                    setShowCheckout(true);
-                  }}
-                  className="w-full bg-gradient-to-r from-purple-500 to-blue-500 text-white font-semibold py-4 rounded-lg hover:from-purple-600 hover:to-blue-600 transition-all"
-                >
-                  Comprar Agora
-                </button>
-                <button className="w-full border border-purple-500 text-purple-500 font-semibold py-4 rounded-lg">
-                  Adicionar ao Carrinho
-                </button>
-                <button 
-                  onClick={() => setShowBuyModal(false)}
-                  className="w-full text-gray-500 py-2"
-                >
-                  Cancelar
-                </button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </div>
   );
 }

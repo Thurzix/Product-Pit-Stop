@@ -3,6 +3,7 @@ import { Heart, MessageCircle, ShoppingCart, Share2, Play, Pause } from 'lucide-
 import { Product } from '../types';
 import { motion } from 'framer-motion';
 import { useAuth } from '../contexts/AuthContext';
+import * as cartService from '../services/cartService';
 
 interface VideoCardProps {
   product: Product;
@@ -25,7 +26,13 @@ export const VideoCard: React.FC<VideoCardProps> = ({
   const [isLiked, setIsLiked] = useState(false);
   const [showControls, setShowControls] = useState(true);
   const videoRef = useRef<HTMLVideoElement>(null);
-  const { addToCart, productLikes, updateProductLikes, productComments } = useAuth();
+  const { productLikes, updateProductLikes, productComments } = useAuth();
+
+  const handleAddToCart = () => {
+    cartService.addToCart(product, 1);
+    // Feedback visual (opcional - pode adicionar toast/notificação)
+    alert('Produto adicionado ao carrinho!');
+  };
 
   const currentLikes = product.likes + (productLikes[product.id] || 0);
   const currentComments = product.comments + (productComments[product.id] || 0);
@@ -198,7 +205,7 @@ export const VideoCard: React.FC<VideoCardProps> = ({
           <div className="flex space-x-2 mt-3">
             <motion.button
               whileTap={{ scale: 0.95 }}
-              onClick={() => addToCart(product.id)}
+              onClick={handleAddToCart}
               className="flex-1 border-2 border-white text-white font-bold py-2 px-3 rounded-full flex items-center justify-center space-x-1 text-sm"
             >
               <ShoppingCart className="w-4 h-4" />
