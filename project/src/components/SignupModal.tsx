@@ -53,6 +53,7 @@ export const SignupModal: React.FC<SignupModalProps> = ({
       const success = await signup({
         name: formData.name,
         email: formData.email,
+        password: formData.password,
         role: 'buyer'
       });
       
