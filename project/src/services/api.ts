@@ -114,7 +114,17 @@ class ApiClient {
         ...config.headers,
         Authorization: `Bearer ${this.token}`,
       };
+      console.log('🔑 Token configurado:', this.token.substring(0, 20) + '...');
+    } else {
+      console.warn('⚠️ Nenhum token encontrado!');
     }
+
+    console.log('📤 Requisição:', {
+      method: config.method || 'GET',
+      url,
+      hasToken: !!this.token,
+      headers: config.headers
+    });
 
     try {
       const response = await fetch(url, config);
