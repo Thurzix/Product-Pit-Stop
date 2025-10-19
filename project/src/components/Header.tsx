@@ -84,21 +84,19 @@ export const Header: React.FC<HeaderProps> = ({ onLoginClick, onCartClick, activ
 
           {/* Actions */}
           <div className="flex items-center space-x-4">
-            {/* Only show cart for buyers */}
-            {user?.role !== 'seller' && (
-              <motion.button
-                whileTap={{ scale: 0.95 }}
-                onClick={onCartClick}
-                className="p-2 hover:bg-gray-100 rounded-full transition-colors relative"
-              >
-                <ShoppingBag className="w-6 h-6 text-gray-700" />
-                {cartItemCount > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-purple-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                    {cartItemCount}
-                  </span>
-                )}
-              </motion.button>
-            )}
+            {/* Cart button - visible for everyone */}
+            <motion.button
+              whileTap={{ scale: 0.95 }}
+              onClick={onCartClick}
+              className="p-2 hover:bg-gray-100 rounded-full transition-colors relative"
+            >
+              <ShoppingBag className="w-6 h-6 text-gray-700" />
+              {cartItemCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-purple-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-semibold">
+                  {cartItemCount}
+                </span>
+              )}
+            </motion.button>
 
             {user ? (
               <div className="flex items-center space-x-3">
