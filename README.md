@@ -20,7 +20,7 @@
 - [Como Usar](#como-usar)
 - [Estrutura do Projeto](#estrutura-do-projeto)
 - [Deploy](#deploy)
-- [Autor](#autor)
+- [Equipe](#equipe)
 
 ---
 
@@ -246,9 +246,17 @@ Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para de
 
 ---
 
-## 👨‍💻 Autor
+## 👨‍💻 Equipe
 
-**Arthur Carvalho** ([@Thurzix](https://github.com/Thurzix))
+### **Desenvolvedor Principal**
+**Arthur Henrique Pasqualini da Silva** ([@Thurzix](https://github.com/Thurzix))
+- Arquitetura e desenvolvimento full-stack
+- Deploy e infraestrutura
+- Gestão do projeto
+
+### **Contribuidores**
+- **Leandro de Moraes** ([@FULL-calvo](https://github.com/FULL-calvo)) - Desenvolvimento e testes
+- **Rickson Madureira** ([@Shad00wman](https://github.com/Shad00wman)) - Desenvolvimento e suporte
 
 Desenvolvido como projeto de conclusão de curso, demonstrando habilidades em desenvolvimento full-stack, arquitetura de sistemas e deploy em produção.
 
