@@ -30,7 +30,14 @@ const limiter = rateLimit({
 app.use(helmet());
 app.use(cors({
   origin: process.env.NODE_ENV === 'production' 
-    ? [process.env.FRONTEND_URL || 'https://product-pit-stop.vercel.app'] 
+    ? (origin, callback) => {
+        // Aceitar todas as URLs do Vercel e a URL principal
+        if (!origin || origin.includes('vercel.app')) {
+          callback(null, true);
+        } else {
+          callback(new Error('Not allowed by CORS'));
+        }
+      }
     : ['http://localhost:3000', 'http://localhost:5173'],
   credentials: true
 }));
