@@ -4,6 +4,7 @@ import { CommentsModal } from './CommentsModal';
 import { ShareModal } from './ShareModal';
 import { Product } from '../types';
 import { apiClient, type ProductResponse } from '../services/api';
+import { mockProducts } from '../data/mockData';
 
 interface VideoFeedProps {
   onBuyNow: (product: Product) => void;
@@ -40,6 +41,7 @@ export const VideoFeed: React.FC<VideoFeedProps> = ({ onBuyNow }) => {
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
+  const [useMockData, setUseMockData] = useState(false);
   const [showCommentsModal, setShowCommentsModal] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
@@ -52,26 +54,54 @@ export const VideoFeed: React.FC<VideoFeedProps> = ({ onBuyNow }) => {
       
       setLoading(true);
       try {
-        const response = await apiClient.getProducts({ page, limit: 10 });
-        if (response.success && response.data) {
+        // Tenta buscar produtos da API primeiro
+        const response = await apiClient.getProducts({ page, limit: 20 });
+        
+        if (response.success && response.data && response.data.products.length > 0) {
+          // ✅ Sucesso: usa produtos do banco
           const newProducts = response.data.products.map(convertProductResponseToProduct);
           
           if (page === 1) {
             setProducts(newProducts);
+            setUseMockData(false);
           } else {
             setProducts(prev => [...prev, ...newProducts]);
           }
           
-          if (newProducts.length < 10) {
+          if (newProducts.length < 20) {
             setHasMore(false);
           }
         } else {
-          console.error('Failed to load products:', response.error || response.message);
-          setHasMore(false);
+          // ⚠️ Fallback: usa mockProducts se não houver produtos no banco
+          console.log('📦 Nenhum produto no banco, usando dados de demonstração locais');
+          if (page === 1) {
+            setProducts(mockProducts.slice(0, 20));
+            setUseMockData(true);
+          } else {
+            const start = (page - 1) * 20;
+            const end = start + 20;
+            const nextBatch = mockProducts.slice(start, end);
+            setProducts(prev => [...prev, ...nextBatch]);
+            if (nextBatch.length < 20) {
+              setHasMore(false);
+            }
+          }
         }
       } catch (error) {
-        console.error('Error loading products:', error);
-        setHasMore(false);
+        console.error('⚠️ Erro ao carregar produtos da API, usando dados locais:', error);
+        // ⚠️ Fallback em caso de erro: usa mockProducts
+        if (page === 1) {
+          setProducts(mockProducts.slice(0, 20));
+          setUseMockData(true);
+        } else {
+          const start = (page - 1) * 20;
+          const end = start + 20;
+          const nextBatch = mockProducts.slice(start, end);
+          setProducts(prev => [...prev, ...nextBatch]);
+          if (nextBatch.length < 20) {
+            setHasMore(false);
+          }
+        }
       } finally {
         setLoading(false);
       }
@@ -140,13 +170,19 @@ export const VideoFeed: React.FC<VideoFeedProps> = ({ onBuyNow }) => {
 
   return (
     <>
+      {/* Indicador de fonte de dados (apenas em desenvolvimento) */}
+      {useMockData && (
+        <div className="fixed top-20 right-4 z-50 bg-yellow-500 text-black px-3 py-1 rounded-full text-xs font-semibold shadow-lg">
+          📦 Dados Locais
+        </div>
+      )}
+      
       <div 
         ref={containerRef}
         className="h-screen overflow-y-scroll snap-y snap-mandatory scrollbar-hide bg-black"
         style={{ 
           scrollbarWidth: 'none', 
           msOverflowStyle: 'none',
-          WebkitScrollbar: { display: 'none' }
         }}
       >
         {products.map((product: Product, index: number) => (
