@@ -50,21 +50,21 @@ export const SignupModal: React.FC<SignupModalProps> = ({
     setIsLoading(true);
 
     try {
-      const success = await signup({
+      const result = await signup({
         name: formData.name,
         email: formData.email,
         password: formData.password,
         role: 'buyer'
       });
       
-      if (success) {
+      if (result.success) {
         onClose();
         setFormData({ name: '', email: '', password: '', confirmPassword: '' });
       } else {
-        setError('Erro ao criar conta. Tente novamente.');
+        setError(result.message || 'Erro ao criar conta. Tente novamente.');
       }
     } catch (err) {
-      setError('Erro ao criar conta. Tente novamente.');
+      setError('Erro ao conectar com o servidor.');
     } finally {
       setIsLoading(false);
     }

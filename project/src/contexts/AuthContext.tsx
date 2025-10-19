@@ -8,9 +8,9 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
 interface AuthContextType {
   user: User | null;
-  login: (email: string, password: string) => Promise<boolean>;
+  login: (email: string, password: string) => Promise<{ success: boolean; message?: string }>;
   logout: () => void;
-  signup: (userData: Partial<User>) => Promise<boolean>;
+  signup: (userData: Partial<User>) => Promise<{ success: boolean; message?: string }>;
   updateUser: (userData: Partial<User>) => void;
   messages: Message[];
   addMessage: (message: Omit<Message, 'id' | 'timestamp'>) => void;
@@ -105,7 +105,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   }, []);
 
-  const login = async (email: string, password: string): Promise<boolean> => {
+  const login = async (email: string, password: string): Promise<{ success: boolean; message?: string }> => {
     setIsLoading(true);
     
     try {
@@ -140,16 +140,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         localStorage.setItem('pps_token', data.data.token);
         apiClient.setToken(data.data.token); // Configura o token no cliente API
         setIsLoading(false);
-        return true;
+        return { success: true };
       } else {
         console.error('Login failed:', data.message);
         setIsLoading(false);
-        return false;
+        return { success: false, message: data.message || 'Erro ao fazer login' };
       }
     } catch (error) {
       console.error('Login error:', error);
       setIsLoading(false);
-      return false;
+      return { success: false, message: 'Erro ao conectar com o servidor' };
     }
   };
 
@@ -170,7 +170,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     apiClient.setToken(null); // Remove o token do cliente API
   };
 
-  const signup = async (userData: Partial<User>): Promise<boolean> => {
+  const signup = async (userData: Partial<User>): Promise<{ success: boolean; message?: string }> => {
     setIsLoading(true);
     
     try {
@@ -210,16 +210,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         localStorage.setItem('pps_token', data.data.token);
         apiClient.setToken(data.data.token); // Configura o token no cliente API
         setIsLoading(false);
-        return true;
+        return { success: true };
       } else {
         console.error('Signup failed:', data.message || data.errors);
         setIsLoading(false);
-        return false;
+        const errorMessage = data.message || (Array.isArray(data.errors) ? data.errors.join(', ') : 'Erro ao criar conta');
+        return { success: false, message: errorMessage };
       }
     } catch (error) {
       console.error('Signup error:', error);
       setIsLoading(false);
-      return false;
+      return { success: false, message: 'Erro ao conectar com o servidor' };
     }
   };
 

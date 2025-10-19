@@ -28,16 +28,16 @@ export const LoginModal: React.FC<LoginModalProps> = ({
     setIsLoading(true);
 
     try {
-      const success = await login(email, password);
-      if (success) {
+      const result = await login(email, password);
+      if (result.success) {
         onClose();
         setEmail('');
         setPassword('');
       } else {
-        setError('Email ou senha incorretos');
+        setError(result.message || 'Email ou senha incorretos');
       }
     } catch (err) {
-      setError('Erro ao fazer login. Tente novamente.');
+      setError('Erro ao conectar com o servidor.');
     } finally {
       setIsLoading(false);
     }
