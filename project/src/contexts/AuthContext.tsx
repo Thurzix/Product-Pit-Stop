@@ -51,6 +51,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     // Simular verificação de token/sessão
     const savedUser = localStorage.getItem('pps_user');
+    const savedToken = localStorage.getItem('pps_token');
     const savedMessages = localStorage.getItem('pps_messages');
     const savedComments = localStorage.getItem('pps_comments');
     const savedCart = localStorage.getItem('pps_cart');
@@ -59,6 +60,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     if (savedUser) {
       setUser(JSON.parse(savedUser));
+    }
+    if (savedToken) {
+      apiClient.setToken(savedToken); // Restaura o token no cliente API
     }
     if (savedMessages) {
       setMessages(JSON.parse(savedMessages));
@@ -134,6 +138,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser(userData);
         localStorage.setItem('pps_user', JSON.stringify(userData));
         localStorage.setItem('pps_token', data.data.token);
+        apiClient.setToken(data.data.token); // Configura o token no cliente API
         setIsLoading(false);
         return true;
       } else {
@@ -162,6 +167,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.removeItem('pps_cart');
     localStorage.removeItem('pps_product_likes');
     localStorage.removeItem('pps_product_comments');
+    apiClient.setToken(null); // Remove o token do cliente API
   };
 
   const signup = async (userData: Partial<User>): Promise<boolean> => {
@@ -202,6 +208,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser(newUser);
         localStorage.setItem('pps_user', JSON.stringify(newUser));
         localStorage.setItem('pps_token', data.data.token);
+        apiClient.setToken(data.data.token); // Configura o token no cliente API
         setIsLoading(false);
         return true;
       } else {
