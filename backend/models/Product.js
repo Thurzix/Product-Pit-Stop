@@ -15,7 +15,7 @@ class Product {
       let query = supabase
         .from('products')
         .select('*, users!products_seller_id_fkey(id, name, store_name, profile_image)', { count: 'exact' })
-        .order('created_at', { ascending: false })
+        .order('posted_at', { ascending: false })
         .range(offset, offset + limit - 1);
       
       // Aplica filtro de categoria se fornecido
@@ -43,7 +43,7 @@ class Product {
         seller_name: product.users?.name || 'Vendedor',
         store_name: product.users?.store_name || 'Loja',
         seller_image: product.users?.profile_image,
-        created_at: product.created_at,
+        posted_at: product.posted_at,
         updated_at: product.updated_at
       }));
       
