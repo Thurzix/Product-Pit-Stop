@@ -32,15 +32,17 @@ export const SellerDashboard: React.FC<SellerDashboardProps> = ({ onBack }) => {
   };
   const sellerProducts = mockProducts.filter(p => p.seller?.id === user?.id);
   
-  // Check if this is a new seller (no products yet) or existing seller
+  // Verifica se é vendedor novo (sem produtos)
   const isNewSeller = sellerProducts.length === 0;
   
-  // For new sellers, show zero stats. For existing sellers, show mock data
-  const totalSales = isNewSeller ? 0 : 150;
-  const totalRevenue = isNewSeller ? 0 : 15789.40;
-  const pendingOrders = isNewSeller ? 0 : 8;
-  const averageRating = isNewSeller ? 0 : 4.8;
-  const totalReviews = isNewSeller ? 0 : 127;
+  // SEMPRE mostra dados reais (zero até que realmente exista vendas)
+  // Produtos: conta do array real
+  // Vendas/Receita/Pedidos: sempre 0 (simulação visual apenas)
+  const totalSales = 0;
+  const totalRevenue = 0;
+  const pendingOrders = 0;
+  const averageRating = sellerProducts.length > 0 ? 5.0 : 0;
+  const totalReviews = 0;
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -56,12 +58,8 @@ export const SellerDashboard: React.FC<SellerDashboardProps> = ({ onBack }) => {
     { label: 'Pedidos Pendentes', value: pendingOrders, icon: Users, color: 'bg-orange-500' }
   ];
 
-  // Show orders only for existing sellers
-  const recentOrders = isNewSeller ? [] : [
-    { id: 'o001', product: 'Fone Bluetooth XZ12', customer: 'Lucas Ferreira', status: 'pendente', value: 159.90, date: '2025-01-15' },
-    { id: 'o002', product: 'Smartwatch MaxFit', customer: 'Ana Silva', status: 'enviado', value: 249.00, date: '2025-01-14' },
-    { id: 'o003', product: 'Mouse Gamer RGB', customer: 'Pedro Santos', status: 'entregue', value: 119.90, date: '2025-01-13' }
-  ];
+  // Sempre mostra lista vazia de pedidos (sem dados falsos)
+  const recentOrders: any[] = [];
 
   const getStatusColor = (status: string) => {
     switch (status) {
