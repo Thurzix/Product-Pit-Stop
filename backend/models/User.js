@@ -1,4 +1,4 @@
-const connection = require('../config/database');
+const supabase = require('../config/supabase');
 const bcrypt = require('bcryptjs');
 
 class User {
@@ -18,109 +18,83 @@ class User {
 
   // Criar novo usuário
   static async create(userData) {
-    return new Promise((resolve, reject) => {
-      const query = `
-        INSERT INTO users (name, email, password, role, profile_image, bio, phone, store_name, store_description, preferences, wishlist) 
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `;
-      
-      const values = [
-        userData.name,
-        userData.email,
-        userData.password,
-        userData.role,
-        userData.profile_image,
-        userData.bio,
-        userData.phone,
-        userData.store_name,
-        userData.store_description,
-        userData.preferences ? JSON.stringify(userData.preferences) : null,
-        userData.wishlist ? JSON.stringify(userData.wishlist) : null
-      ];
+    const { data, error } = await supabase
+      .from('users')
+      .insert([{
+        name: userData.name,
+        email: userData.email,
+        password: userData.password,
+        role: userData.role || 'buyer',
+        profile_image: userData.profile_image || null,
+        bio: userData.bio || null,
+        phone: userData.phone || null,
+        store_name: userData.store_name || null,
+        store_description: userData.store_description || null,
+        preferences: userData.preferences || [],
+        wishlist: userData.wishlist || []
+      }])
+      .select()
+      .single();
 
-      connection.query(query, values, (err, results) => {
-        if (err) {
-          reject(err);
-        } else {
-          resolve({
-            id: results.insertId,
-            ...userData,
-            password: undefined // Não retornar a senha
-          });
-        }
-      });
-    });
+    if (error) throw error;
+
+    // Remover senha do retorno
+    const { password, ...userWithoutPassword } = data;
+    return userWithoutPassword;
   }
 
   // Buscar usuário por email
   static async findByEmail(email) {
-    return new Promise((resolve, reject) => {
-      const query = 'SELECT * FROM users WHERE email = ?';
-      
-      connection.query(query, [email], (err, results) => {
-        if (err) {
-          reject(err);
-        } else {
-          if (results.length > 0) {
-            const user = results[0];
-            // Parse JSON fields
-            if (user.preferences) {
-              user.preferences = JSON.parse(user.preferences);
-            }
-            if (user.wishlist) {
-              user.wishlist = JSON.parse(user.wishlist);
-            }
-            resolve(user);
-          } else {
-            resolve(null);
-          }
-        }
-      });
-    });
+    const { data, error } = await supabase
+      .from('users')
+      .select('*')
+      .eq('email', email)
+      .single();
+
+    if (error) {
+      if (error.code === 'PGRST116') {
+        // Nenhum registro encontrado
+        return null;
+      }
+      throw error;
+    }
+
+    return data;
   }
 
   // Buscar usuário por ID
   static async findById(id) {
-    return new Promise((resolve, reject) => {
-      const query = 'SELECT * FROM users WHERE id = ?';
-      
-      connection.query(query, [id], (err, results) => {
-        if (err) {
-          reject(err);
-        } else {
-          if (results.length > 0) {
-            const user = results[0];
-            // Parse JSON fields
-            if (user.preferences) {
-              user.preferences = JSON.parse(user.preferences);
-            }
-            if (user.wishlist) {
-              user.wishlist = JSON.parse(user.wishlist);
-            }
-            // Remover senha do retorno
-            delete user.password;
-            resolve(user);
-          } else {
-            resolve(null);
-          }
-        }
-      });
-    });
+    const { data, error } = await supabase
+      .from('users')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (error) {
+      if (error.code === 'PGRST116') {
+        return null;
+      }
+      throw error;
+    }
+
+    // Remover senha do retorno
+    const { password, ...userWithoutPassword } = data;
+    return userWithoutPassword;
   }
 
   // Verificar se email já existe
   static async emailExists(email) {
-    return new Promise((resolve, reject) => {
-      const query = 'SELECT COUNT(*) as count FROM users WHERE email = ?';
-      
-      connection.query(query, [email], (err, results) => {
-        if (err) {
-          reject(err);
-        } else {
-          resolve(results[0].count > 0);
-        }
-      });
-    });
+    const { data, error } = await supabase
+      .from('users')
+      .select('id')
+      .eq('email', email)
+      .single();
+
+    if (error && error.code === 'PGRST116') {
+      return false; // Email não existe
+    }
+
+    return data !== null;
   }
 
   // Validar senha
@@ -135,39 +109,33 @@ class User {
 
   // Atualizar usuário
   static async update(id, userData) {
-    return new Promise((resolve, reject) => {
-      const fields = [];
-      const values = [];
-      
-      // Campos permitidos para atualização
-      const allowedFields = ['name', 'profile_image', 'bio', 'phone', 'store_name', 'store_description', 'preferences', 'wishlist'];
-      
-      allowedFields.forEach(field => {
-        if (userData[field] !== undefined) {
-          fields.push(`${field} = ?`);
-          if (field === 'preferences' || field === 'wishlist') {
-            values.push(userData[field] ? JSON.stringify(userData[field]) : null);
-          } else {
-            values.push(userData[field]);
-          }
-        }
-      });
-
-      if (fields.length === 0) {
-        return resolve(null);
+    const updateData = {};
+    
+    // Campos permitidos para atualização
+    const allowedFields = ['name', 'profile_image', 'bio', 'phone', 'store_name', 'store_description', 'preferences', 'wishlist'];
+    
+    allowedFields.forEach(field => {
+      if (userData[field] !== undefined) {
+        updateData[field] = userData[field];
       }
-
-      values.push(id);
-      const query = `UPDATE users SET ${fields.join(', ')} WHERE id = ?`;
-      
-      connection.query(query, values, (err, results) => {
-        if (err) {
-          reject(err);
-        } else {
-          resolve(results.affectedRows > 0);
-        }
-      });
     });
+
+    if (Object.keys(updateData).length === 0) {
+      return null;
+    }
+
+    const { data, error } = await supabase
+      .from('users')
+      .update(updateData)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    // Remover senha do retorno
+    const { password, ...userWithoutPassword } = data;
+    return userWithoutPassword;
   }
 }
 
