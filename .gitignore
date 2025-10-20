@@ -1,22 +1,29 @@
 # Dependencies
 node_modules/
+/backend/node_modules/
+/project/node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
+package-lock.json
 
-# Environment variables
+# Environment variables (IMPORTANTE: Nunca commitar .env!)
 .env
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
+/backend/.env
+/project/.env
 
 # Build outputs
 dist/
 build/
 out/
 .next/
+/project/dist/
+/backend/dist/
 
 # IDEs and editors
 .vscode/
@@ -24,7 +31,6 @@ out/
 *.swp
 *.swo
 *~
-.DS_Store
 
 # Testing
 coverage/
@@ -35,10 +41,8 @@ logs/
 *.log
 
 # OS files
-Thumbs.db
 .DS_Store
-
-# Temporary files
+Thumbs.db
 *.tmp
 *.temp
 
@@ -47,6 +51,12 @@ Thumbs.db
 *.sqlite
 *.db
 
-# Uploads
+# Uploads e arquivos temporários
 uploads/
 temp/
+
+# Cache e arquivos de sistema
+.cache/
+.parcel-cache/
+.eslintcache
+.turbo
